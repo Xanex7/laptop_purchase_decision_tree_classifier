@@ -10,12 +10,11 @@ app = Flask(__name__)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # points to /api
 PARENT_DIR = os.path.dirname(CURRENT_DIR)               # points to project root
 
-# Candidate model filenames
+# Target file name from your repository
 MODEL_FILENAMES = [
+    "model_decision_tree_classifier.pkl",
     "model_decision_tree.pkl", 
-    "model_dt.pkl", 
-    "model_decisiontree.pkl",
-    "model_logistic_regression_3.pkl"
+    "model_dt.pkl"
 ]
 
 MODEL_PATH = None
@@ -172,7 +171,6 @@ HTML_TEMPLATE = """
             box-shadow: 0 0 20px var(--primary-dim);
         }
 
-        /* Theme Switcher Bar */
         .theme-switcher {
             display: flex;
             gap: 6px;
@@ -565,7 +563,6 @@ HTML_TEMPLATE = """
         <span>DecisionCore<span style="color: var(--primary-glow);">.ai</span></span>
     </div>
     
-    <!-- Dynamic Theme Selector -->
     <div style="display: flex; align-items: center; gap: 14px;">
         <div class="theme-switcher">
             <button class="theme-btn theme-amber active" onclick="switchTheme('amber')"></button>
@@ -589,7 +586,6 @@ HTML_TEMPLATE = """
 
     <div class="grid-layout">
         
-        <!-- Form Inputs -->
         <div class="glass-card">
             <div class="section-header">
                 <span class="section-title"><i class="fa-solid fa-sliders"></i> Classification Attributes</span>
@@ -650,7 +646,6 @@ HTML_TEMPLATE = """
             </form>
         </div>
 
-        <!-- Output Sidebar -->
         <div class="sticky-sidebar" id="outputSection">
             <div class="glass-card">
                 <div class="section-header">
@@ -686,7 +681,6 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- Session History Log -->
                 <div style="margin-top: 24px;">
                     <div class="section-title" style="font-size: 1rem;"><i class="fa-solid fa-clock-rotate-left"></i> Decision Audit Log</div>
                     <div class="history-box">
@@ -725,7 +719,6 @@ HTML_TEMPLATE = """
     let lastResult = "Awaiting Input";
     let historyRecords = [];
 
-    // Switch active theme dynamically
     function switchTheme(themeName) {
         document.documentElement.setAttribute('data-theme', themeName);
         document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
@@ -877,7 +870,6 @@ def handler():
         return jsonify({'status': 'error', 'message': 'Decision Tree model not loaded on server. Verify file location.'}), 500
         
     try:
-        # Match exact 5 feature names from pickled DecisionTreeClassifier metadata
         data_dict = {
             'Age': [float(request.form['Age'])],
             'Gender': [float(request.form['Gender'])],
@@ -889,7 +881,6 @@ def handler():
         features_df = pd.DataFrame(data_dict)
         raw_pred = int(model.predict(features_df)[0])
         
-        # Calculate leaf probability confidence
         prob_score = 0.5
         if hasattr(model, "predict_proba"):
             probs = model.predict_proba(features_df)[0]
