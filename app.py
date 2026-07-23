@@ -10,9 +10,10 @@ app = Flask(__name__)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # points to /api
 PARENT_DIR = os.path.dirname(CURRENT_DIR)               # points to project root
 
-# Target file name from your repository
+# Candidate model filenames matching your repository
 MODEL_FILENAMES = [
     "model_decision_tree_classifier.pkl",
+    "model_decision_tree_classifier_2.pkl",
     "model_decision_tree.pkl", 
     "model_dt.pkl"
 ]
