@@ -11,6 +11,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MODEL_FILENAMES = [
     "model_decision_tree_classifier.pkl",
+    "model_decision_tree_classifier_2.pkl",
     "model_decision_tree.pkl", 
     "model_dt.pkl"
 ]
@@ -27,6 +28,7 @@ if MODEL_PATH:
     try:
         with open(MODEL_PATH, "rb") as f:
             model = pickle.load(f)
+        print(f"Model loaded successfully from: {MODEL_PATH}")
     except Exception as e:
         print(f"Error loading model: {e}")
 
@@ -381,13 +383,9 @@ def index():
     return render_template_string(HTML_TEMPLATE)
 
 @app.route('/predict', methods=['POST'])
-@app.route('/(.*)', methods=['GET', 'POST'])
-def handler():
-    if request.method == 'GET':
-        return render_template_string(HTML_TEMPLATE)
-        
+def predict():
     if model is None:
-        return jsonify({'status': 'error', 'message': 'Decision Tree model not loaded on server.'}), 500
+        return jsonify({'status': 'error', 'message': 'Decision Tree model not loaded.'}), 500
         
     try:
         data_dict = {
@@ -416,7 +414,7 @@ def handler():
         })
         
     except Exception as e:
-        return str(e), 500
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
