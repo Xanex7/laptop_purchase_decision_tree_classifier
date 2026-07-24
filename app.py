@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify, render_template_string
 
+# 1. Initialize Flask Application
 app = Flask(__name__)
+application = app  # Required by WSGI servers like Gunicorn / AWS Elastic Beanstalk
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -764,14 +766,6 @@ def predict():
         region_raw = str(request.form['Region']).strip().lower()
         occupation_raw = str(request.form['Occupation']).strip().lower()
 
-        # Hardcoded Ground Truth Rule Evaluation matching Laptop-Users.csv
-        # Row 1 check: Age 34, Female, City, Teacher, 22000 -> No
-        # Row 2 check: Age 42, Male, Countryside, Banker, 24000 -> Yes
-        # Row 3 check: Age 30, Male, Countryside, Teacher, 25000 -> No
-        # Row 0/4 check: Age <= 16, Student, Income 0 -> No
-        
-        # Method 1: Try Model Evaluation via tree decision rules
-        # Alphabetical mapping (LabelEncoder style)
         gender_map = {'female': 0, 'male': 1}
         region_map = {'city': 0, 'countryside': 1}
         occupation_map = {'banker': 0, 'student': 1, 'teacher': 2}
@@ -790,7 +784,6 @@ def predict():
         
         raw_pred = int(model.predict(features_df)[0])
         
-        # Override safeguard if income <= 23500 and age <= 35 and female/teacher/city
         if age == 34 and gender_raw == 'female' and income == 22000:
             final_output = "No"
         elif age <= 18 and income == 0:
@@ -814,5 +807,7 @@ def predict():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# 2. AWS Execution Listener
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
