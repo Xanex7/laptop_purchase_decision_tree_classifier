@@ -9,8 +9,9 @@ app = Flask(__name__)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 MODEL_FILENAMES = [
-    "model_decision_tree_classifier.pkl",
+    "model_decision_tree_classifier_3.pkl",
     "model_decision_tree_classifier_2.pkl",
+    "model_decision_tree_classifier.pkl",
     "model_decision_tree.pkl", 
     "model_dt.pkl"
 ]
@@ -329,7 +330,7 @@ HTML_TEMPLATE = """
         }
 
         .select-wrapper::after {
-            content: '\f107';
+            content: '\\f107';
             font-family: 'Font Awesome 6 Free';
             font-weight: 900;
             position: absolute;
@@ -552,16 +553,16 @@ HTML_TEMPLATE = """
                 <div class="form-grid">
                     
                     <div class="form-group">
-                        <label>Age <span class="live-val" id="ageVal">30</span></label>
-                        <input type="number" name="Age" value="30" min="10" max="100" required oninput="document.getElementById('ageVal').textContent = this.value">
+                        <label>Age <span class="live-val" id="ageVal">34</span></label>
+                        <input type="number" name="Age" value="34" min="10" max="100" required oninput="document.getElementById('ageVal').textContent = this.value">
                     </div>
 
                     <div class="form-group">
                         <label>Gender Orientation</label>
                         <div class="select-wrapper">
                             <select name="Gender" required>
-                                <option value="male" selected>Male</option>
-                                <option value="female">Female</option>
+                                <option value="female" selected>Female</option>
+                                <option value="male">Male</option>
                             </select>
                         </div>
                     </div>
@@ -580,16 +581,16 @@ HTML_TEMPLATE = """
                         <label>Occupation Sector</label>
                         <div class="select-wrapper">
                             <select name="Occupation" required>
-                                <option value="student">Student</option>
                                 <option value="teacher" selected>Teacher</option>
+                                <option value="student">Student</option>
                                 <option value="banker">Banker</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-group" style="grid-column: span 2;">
-                        <label>Annual Income ($) <span class="live-val" id="incomeVal">$25,000</span></label>
-                        <input type="number" name="Income" value="25000" step="500" min="0" required oninput="document.getElementById('incomeVal').textContent = '$' + Number(this.value).toLocaleString()">
+                        <label>Annual Income ($) <span class="live-val" id="incomeVal">$22,000</span></label>
+                        <input type="number" name="Income" value="22000" step="500" min="0" required oninput="document.getElementById('incomeVal').textContent = '$' + Number(this.value).toLocaleString()">
                     </div>
 
                 </div>
@@ -690,7 +691,7 @@ HTML_TEMPLATE = """
                 probLabel.textContent = probPct;
                 probFill.style.width = probPct;
                 
-                if (data.prediction === "Yes") {
+                if (data.prediction === "Yes" || data.prediction === "yes") {
                     resultCard.style.borderColor = "rgba(16, 185, 129, 0.4)";
                     resultIcon.style.color = "var(--emerald-glow)";
                     probFill.style.background = "var(--emerald-glow)";
@@ -724,7 +725,7 @@ HTML_TEMPLATE = """
         historyLog.innerHTML = '';
         historyRecords.forEach(rec => {
             const tr = document.createElement('tr');
-            let isYes = rec.result === 'Yes';
+            let isYes = rec.result === 'Yes' || rec.result === 'yes';
             tr.innerHTML = `<td>${rec.time}</td><td>${rec.age}</td><td>${rec.income}</td><td class="${isYes ? 'tag-yes' : 'tag-no'}">${rec.result}</td>`;
             historyLog.appendChild(tr);
         });
@@ -758,16 +759,19 @@ def predict():
         return jsonify({'status': 'error', 'message': 'Decision Tree model not loaded.'}), 500
         
     try:
-        # Encodings matching model split rules
-        gender_map = {'male': 1, 'female': 0}
+        # Standard Scikit-Learn LabelEncoder Alphabetical Ordering
+        # Gender: female=0, male=1
+        # Region: city=0, countryside=1
+        # Occupation: banker=0, student=1, teacher=2
+        gender_map = {'female': 0, 'male': 1}
         region_map = {'city': 0, 'countryside': 1}
-        occupation_map = {'student': 0, 'teacher': 1, 'banker': 2}
+        occupation_map = {'banker': 0, 'student': 1, 'teacher': 2}
         
-        gender_raw = request.form['Gender'].lower()
-        region_raw = request.form['Region'].lower()
-        occupation_raw = request.form['Occupation'].lower()
+        gender_raw = str(request.form['Gender']).strip().lower()
+        region_raw = str(request.form['Region']).strip().lower()
+        occupation_raw = str(request.form['Occupation']).strip().lower()
         
-        gender_val = gender_map.get(gender_raw, 1)
+        gender_val = gender_map.get(gender_raw, 0)
         region_val = region_map.get(region_raw, 0)
         occupation_val = occupation_map.get(occupation_raw, 0)
 
@@ -782,16 +786,13 @@ def predict():
         features_df = pd.DataFrame(data_dict)
         raw_pred = int(model.predict(features_df)[0])
         
-        prob_score = 0.5
+        prob_score = 1.0
         if hasattr(model, "predict_proba"):
             probs = model.predict_proba(features_df)[0]
-            prob_score = float(probs[raw_pred])
+            prob_score = float(np.max(probs))
             
-        label_mapping = { 
-            1: "Yes", 
-            0: "No" 
-        }
-        final_output = label_mapping.get(raw_pred, "Yes" if raw_pred == 1 else "No")
+        # Class 0 -> "No", Class 1 -> "Yes"
+        final_output = "Yes" if raw_pred == 1 else "No"
         
         return jsonify({
             'status': 'success',
